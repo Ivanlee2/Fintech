@@ -1,0 +1,102 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from datetime import datetime
+import ipywidgets as widgets
+from IPython.display import display
+import os
+
+# CSV 파일 경로
+csv_file_path = "/content/Fintech7.csv"
+# CSV 파일 읽기
+df = pd.read_csv(csv_file_path, encoding="CP949")
+
+# 가상화폐 종류 목록
+crypto_list = df.columns[1:].tolist()
+
+# 가상화폐 선택 위젯 생성
+crypto_select = widgets.SelectMultiple(
+    options=crypto_list,
+    description='가상화폐 선택:'
+)
+
+# 출력 버튼 생성
+output_button = widgets.Button(description="그래프 출력")
+download_button = widgets.Button(description="CSV 다운로드")
+
+# 출력 결과 표시 영역 생성
+output_result = widgets.Output()
+
+# 그래프를 그리는 함수
+def plot_graph(b):
+    with output_result:
+        output_result.clear_output()
+
+        # 선택한 가상화폐들
+        selected_crypto = crypto_select.value
+
+        # 시작 날짜와 종료 날짜
+        start_date = pd.Timestamp(start_date_picker.value)
+        end_date = pd.Timestamp(end_date_picker.value)
+
+        # 사용자가 입력한 기간에 맞는 데이터 필터링
+        filtered_data = df[(pd.to_datetime(df['Date']) >= start_date) & (pd.to_datetime(df['Date']) <= end_date)]
+
+        # 선택한 가상화폐에 대한 데이터만 필터링
+        filtered_data = filtered_data[['Date'] + list(selected_crypto)]
+
+        # 가격 데이터를 숫자로 변환하여 그래프에 사용
+        for crypto in selected_crypto:
+            filtered_data[crypto] = filtered_data[crypto].str.replace(',', '').astype(float)
+
+        # 가상화폐 종류에 대한 그래프 그리기
+        plt.figure(figsize=(10, 6))
+        for crypto in selected_crypto:
+            plt.plot(filtered_data['Date'], filtered_data[crypto], label=crypto, marker='o', linestyle='-')
+        plt.xlabel('Date')
+        plt.ylabel('Price')
+        plt.title('Price Flow')
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+
+# CSV 다운로드를 수행하는 함수
+def download_csv(b):
+    with output_result:
+        output_result.clear_output()
+
+        # 선택한 가상화폐들
+        selected_crypto = crypto_select.value
+
+        # 시작 날짜와 종료 날짜
+        start_date = pd.Timestamp(start_date_picker.value)
+        end_date = pd.Timestamp(end_date_picker.value)
+
+        # 사용자가 입력한 기간에 맞는 데이터 필터링
+        filtered_data = df[(pd.to_datetime(df['Date']) >= start_date) & (pd.to_datetime(df['Date']) <= end_date)]
+
+        # 선택한 가상화폐에 대한 데이터만 필터링
+        filtered_data = filtered_data[['Date'] + list(selected_crypto)]
+
+        # CSV 파일로 저장
+        output_csv_file_path = os.path.join(os.getcwd(), "Selected_Crypto_Price_Data.csv")
+        filtered_data.to_csv(output_csv_file_path, index=False)
+
+        print(f"선택한 가상화폐 가격 데이터를 {output_csv_file_path}로 저장했습니다.")
+
+# 출력 버튼 클릭 이벤트 핸들러 등록
+output_button.on_click(plot_graph)
+download_button.on_click(download_csv)
+
+# 시작 날짜 선택 위젯
+start_date_picker = widgets.DatePicker(description="시작 날짜:")
+
+# 종료 날짜 선택 위젯
+end_date_picker = widgets.DatePicker(description="종료 날짜:")
+
+# 위젯들을 디스플레이
+display(crypto_select)
+display(start_date_picker)
+display(end_date_picker)
+display(output_button)
+display(download_button)
+display(output_result)
